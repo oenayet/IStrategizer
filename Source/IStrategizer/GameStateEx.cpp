@@ -3,12 +3,12 @@
 #include "MetaData.h"
 #endif
 
-using namespace MetaData;
+using namespace IStrategizer;
 
 GameStateEx::GameStateEx()
 {
-	//_shallowFeatures.resize(COUNT(ShallowFeatureType), 0.0);
-	//_deepFeatures.resize(COUNT(DeepFeatureType), 0.0);
+    //_shallowFeatures.resize(COUNT(ShallowFeatureType), 0.0);
+    //_deepFeatures.resize(COUNT(DeepFeatureType), 0.0);
 }
 //----------------------------------------------------------------------------------------------
 void GameStateEx::InitializeAddressesAux()

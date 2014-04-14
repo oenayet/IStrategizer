@@ -4,20 +4,19 @@
 
 #include "CompositeExpression.h"
 
-///> class=Or
-///> parent=CompositeExpression
-class Or : public CompositeExpression
+namespace IStrategizer
 {
-public:
-                Or() {}
-                Or(const vector<Expression*>& p_expressions) : CompositeExpression(p_expressions) {}
-    bool        Evaluate();
-    //----------------------------------------------------------------------------------------------
-    // Serialization
-    string      TypeName()  { return "Or"; }
-    int         TypeSize()  { return sizeof(Or); }
-    UserObject* Prototype() { return new Or; }
-    //----------------------------------------------------------------------------------------------
-};
+    ///> class=Or
+    ///> parent=CompositeExpression
+    class Or : public CompositeExpression
+    {
+        OBJECT_SERIALIZABLE(Or);
+
+    public:
+        Or() {}
+        Or(const std::vector<Expression*>& p_expressions) : CompositeExpression(p_expressions) {}
+        bool Evaluate(RtsGame& game);
+    };
+}
 
 #endif // OR_H

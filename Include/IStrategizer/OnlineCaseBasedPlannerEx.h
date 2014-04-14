@@ -2,37 +2,33 @@
 #define ONLINECASEBASEDPLANNEREX_H
 
 #include <string>
-class GoalEx;
+#include "WorldClock.h"
 
-namespace MetaData
+namespace IStrategizer
 {
-	enum PlayerType;
-}
+    enum PlayerType;
+    class GoalEx;
 
-using namespace MetaData;
-namespace OLCBP
-{
-    const std::string g_CaseBasePath = "IStrategizerEx.cb";
-   
-    class OnlinePlanExpansionExecutionEx;
+    class OnlinePlanExpansionExecution;
     class CaseBasedReasonerEx;
 
     class OnlineCaseBasedPlannerEx
     {
     private:
-        CaseBasedReasonerEx*			_caseBasedReasoner;
-        OnlinePlanExpansionExecutionEx*	_onlineExpansionExecution;
+        CaseBasedReasonerEx*            _caseBasedReasoner;
+        OnlinePlanExpansionExecution*    _onlineExpansionExecution;
 
     public:
         OnlineCaseBasedPlannerEx();
-        void       Update(unsigned long p_gameCycle);
+        void       Update(const WorldClock& p_clock);
         void       Init(GoalEx *p_initialGoal);
-		CaseBasedReasonerEx* Reasoner() const { return _caseBasedReasoner; }
-		OnlinePlanExpansionExecutionEx* Planner() const { return _onlineExpansionExecution; }
+        const CaseBasedReasonerEx* Reasoner() const { return _caseBasedReasoner; }
+        const OnlinePlanExpansionExecution* ExpansionExecution() const { return _onlineExpansionExecution; }
+        OnlinePlanExpansionExecution* ExpansionExecution() { return _onlineExpansionExecution; }
         virtual    ~OnlineCaseBasedPlannerEx();
     };
 }
 
-extern OLCBP::OnlineCaseBasedPlannerEx *g_OnlineCaseBasedPlanner;
+extern IStrategizer::OnlineCaseBasedPlannerEx *g_OnlineCaseBasedPlanner;
 
-#endif	// OnlineCaseBasedPlannerEx
+#endif    // OnlineCaseBasedPlannerEx

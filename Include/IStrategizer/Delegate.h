@@ -3,52 +3,55 @@
 
 #include <cassert>
 
-class BaseDelegate
+namespace IStrategizer
 {
-public:
-    virtual bool Equals( const BaseDelegate* p_other) = 0;
-    virtual void operator()() = 0;
-    virtual void Call() = 0;
-};
-
-template<class TReciever>
-class Delegate : public BaseDelegate
-{
-private:
-    typedef void (TReciever::*PTF)();
-    PTF         m_ptr2Func;
-    TReciever*  m_ptr2Object;
-
-public:
-    Delegate(TReciever* p_ptr2Object, PTF p_ptr2Func)
+    class BaseDelegate
     {
-        m_ptr2Func      = p_ptr2Func;
-        m_ptr2Object    = p_ptr2Object;
-    }
+    public:
+        virtual bool Equals( const BaseDelegate* p_other) = 0;
+        virtual void operator()() = 0;
+        virtual void Call() = 0;
+    };
 
-    bool Equals(const BaseDelegate* p_other)
+    template<class TReciever>
+    class Delegate : public BaseDelegate
     {
-        const Delegate<TReciever>* other;
+    private:
+        typedef void (TReciever::*PTF)();
+        PTF         m_ptr2Func;
+        TReciever*  m_ptr2Object;
 
-        other = static_cast<const Delegate<TReciever>*>(p_other);
+    public:
+        Delegate(TReciever* p_ptr2Object, PTF p_ptr2Func)
+        {
+            m_ptr2Func      = p_ptr2Func;
+            m_ptr2Object    = p_ptr2Object;
+        }
 
-        assert(other != NULL);
-        assert(m_ptr2Object != NULL);
+        bool Equals(const BaseDelegate* p_other)
+        {
+            const Delegate<TReciever>* other;
 
-        return other->m_ptr2Object == m_ptr2Object && other->m_ptr2Func == m_ptr2Func;
-    }
+            other = static_cast<const Delegate<TReciever>*>(p_other);
 
-    virtual void operator()()
-    {
-        assert(m_ptr2Object != NULL);
-        (m_ptr2Object->*m_ptr2Func)();
-    }
+            assert(other != nullptr);
+            assert(m_ptr2Object != nullptr);
 
-    virtual void Call()
-    {
-        assert(m_ptr2Object != NULL);
-        (m_ptr2Object->*m_ptr2Func)();
-    }
-};
+            return other->m_ptr2Object == m_ptr2Object && other->m_ptr2Func == m_ptr2Func;
+        }
+
+        virtual void operator()()
+        {
+            assert(m_ptr2Object != nullptr);
+            (m_ptr2Object->*m_ptr2Func)();
+        }
+
+        virtual void Call()
+        {
+            assert(m_ptr2Object != nullptr);
+            (m_ptr2Object->*m_ptr2Func)();
+        }
+    };
+}
 
 #endif // DELEGATE_H

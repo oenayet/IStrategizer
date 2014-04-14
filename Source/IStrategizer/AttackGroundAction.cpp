@@ -1,80 +1,94 @@
 #include "AttackGroundAction.h"
-#include "EntityObjectExist.h"
-#include "CheckEntityObjectAttribute.h"
-#include "CheckPositionFilterCount.h"
-#include "EntityClassExist.h"
-#include "Misc.h"
-#include "And.h"
+
+#include <cassert>
 #include "Vector2.h"
 #include "OnlineCaseBasedPlannerEx.h"
 #include "AbstractAdapter.h"
 #include "CellFeature.h"
 #include "CaseBasedReasonerEx.h"
+#include "DataMessage.h"
+#include "EngineAssist.h"
+#include "RtsGame.h"
+#include "GamePlayer.h"
+#include "GameTechTree.h"
+#include "GameType.h"
+#include "GameEntity.h"
+#include "WorldMap.h"
+#include "AdapterEx.h"
+#include "EntityClassExist.h"
+#include "Not.h"
 
-using namespace OLCBP;
+using namespace IStrategizer;
+using namespace Serialization;
 
 //----------------------------------------------------------------------------------------------
 AttackGroundAction::AttackGroundAction() : Action(ACTIONEX_AttackGround)
 {
-	_params[PARAM_EntityClassId]	= ECLASS_START;
+    _params[PARAM_EntityClassId] = ECLASS_START;
+    CellFeature::Null().To(_params);
 }
 //----------------------------------------------------------------------------------------------
-AttackGroundAction::AttackGroundAction(const PlanStepParameters& p_parameters, CellFeature* p_targetCell) : Action(ACTIONEX_AttackGround, p_parameters)
+AttackGroundAction::AttackGroundAction(const PlanStepParameters& p_parameters) : Action(ACTIONEX_AttackGround, p_parameters)
 {
-    _targetCell = p_targetCell;
+}
+//----------------------------------------------------------------------------------------------
+bool AttackGroundAction::ExecuteAux(RtsGame& game, const WorldClock& p_clock)
+{
+    EntityClassType attackerType = (EntityClassType)_params[PARAM_EntityClassId];
+    AbstractAdapter *pAdapter = g_OnlineCaseBasedPlanner->Reasoner()->Adapter();
+    bool executed = false;
+
+    // Adapt attacker
+    _attackerId = pAdapter->GetEntityObjectId(attackerType,AdapterEx::AttackerStatesRankVector);
+
+    if (_attackerId != INVALID_TID)
+    {
+        GameEntity* pGameAttacker = game.Self()->GetEntity(_attackerId);
+        assert(pGameAttacker);
+        pGameAttacker->Lock(this);
+
+        // Adapt attack position
+        _position = pAdapter->AdaptEnemyBorder();
+        executed = pGameAttacker->AttackGround(_position);
+    }
+    
+    return executed;
+}
+//----------------------------------------------------------------------------------------------
+void AttackGroundAction::HandleMessage(RtsGame& game, Message* p_msg, bool& p_consumed)
+{
+    
+}
+//----------------------------------------------------------------------------------------------
+bool AttackGroundAction::AliveConditionsSatisfied(RtsGame& game)
+{
+    return g_Assist.DoesEntityObjectExist(_attackerId);
+}
+//----------------------------------------------------------------------------------------------
+bool AttackGroundAction::SuccessConditionsSatisfied(RtsGame& game)
+{
+    assert(PlanStepEx::State() == ESTATE_Executing);
+
+    GameEntity* pGameAttacker = game.Self()->GetEntity(_attackerId);
+    assert(pGameAttacker);
+    ObjectStateType attackerState = (ObjectStateType)pGameAttacker->Attr(EOATTR_State);
+    return (attackerState == OBJSTATE_Attacking) || (attackerState == OBJSTATE_UnderAttack);
 }
 //----------------------------------------------------------------------------------------------
 void  AttackGroundAction::InitializeAddressesAux()
 {
-	Action::InitializeAddressesAux();
-	/*AddMemberAddress(1,
-		&_targetCell);*/
+    Action::InitializeAddressesAux();
 }
 //----------------------------------------------------------------------------------------------
-void AttackGroundAction::InitializeSuccessConditions()
+void AttackGroundAction::InitializePostConditions()
 {
-	EntityClassExist* m_cond = (EntityClassExist*)_preCondition->operator [](0);
-	int	m_unitObjectId = m_cond->GetEntityIdByIndex(0);
-
-	_successCondition = new And();
-	_successCondition->AddExpression(new EntityObjectExist(PLAYER_Self, m_unitObjectId));
-	// FIXME: Target concrete position is not supported
-	_successCondition->AddExpression(new CheckEntityObjectAttribute(PLAYER_Self, m_unitObjectId, EOATTR_PosX, RELOP_Equal, 0 /*Target Concrete Location*/));
-	_successCondition->AddExpression(new CheckEntityObjectAttribute(PLAYER_Self, m_unitObjectId, EOATTR_PosY, RELOP_Equal, 0 /*Target Concrete Location*/));
-}
-//----------------------------------------------------------------------------------------------
-void AttackGroundAction::InitializeAliveConditions()
-{
-	EntityClassExist* m_cond = (EntityClassExist*)_preCondition->operator [](0);
-	int	m_unitObjectId = m_cond->GetEntityIdByIndex(0);
-
-	_aliveCondition = new And();
-	_aliveCondition->AddExpression(new EntityObjectExist(PLAYER_Self, m_unitObjectId));
+    _postCondition = new Not(new EntityClassExist(PLAYER_Enemy, 1, true));
 }
 //----------------------------------------------------------------------------------------------
 void AttackGroundAction::InitializePreConditions()
 {
     vector<Expression*> m_terms;
-
-	m_terms.push_back(new EntityClassExist(PLAYER_Self, (EntityClassType)_params[PARAM_EntityClassId], 1, true, true));
+    EntityClassType attacker = (EntityClassType)_params[PARAM_EntityClassId];
+    m_terms.push_back(new EntityClassExist(PLAYER_Self, attacker, 1, true));
     _preCondition = new And(m_terms);
-}
-//----------------------------------------------------------------------------------------------
-void AttackGroundAction::InitializePostConditions()
-{
-    vector<Expression*> m_terms;
-
-	//FIXME : LFHD use this condition
-	//m_terms.push_back(new CheckPositionFilterCount((PlayerType)_params[PARAM_TargetPlayerId], FILTER_AnyUnit, RELOP_Equal, 0, PositionFeatureVector::Null()));
-	_postCondition = new And(m_terms);
-}
-//----------------------------------------------------------------------------------------------
-bool AttackGroundAction::ExecuteAux(unsigned long p_cycles)
-{
-	throw NotImplementedException(XcptHere);
-	////Vector2 targetPosition = g_OnlineCaseBasedPlanner->Reasoner()->Adapter()->AdaptPosition(_targetCell);
-	//Vector2 targetPosition = Vector2::Null();
-	//EntityClassExist* m_cond = (EntityClassExist*)_aliveCondition->operator [](0);
-
-	//return g_Assist.ExecuteAttackGround(m_cond->Parameter(PARAM_EntityObjectId), targetPosition);
 }

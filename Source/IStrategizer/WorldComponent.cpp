@@ -1,14 +1,13 @@
-#ifndef WORLDCOMPONENT_H
 #include "WorldComponent.h"
-#endif
-using namespace IStrategizer;
 
 #ifndef WORLDCLOCK_H
 #include "WorldClock.h"
 #endif
 
-void WorldComponent::Update()
+using namespace IStrategizer;
+
+void WorldComponent::Update(const WorldClock& p_clock)
 {
-    m_lastUpdate = g_WorldClock.ElapsedEngineCycles();
-    UpdateAux();
+    m_lastUpdate = p_clock.ElapsedEngineCycles();
+    UpdateAux(*g_Game, p_clock);
 }

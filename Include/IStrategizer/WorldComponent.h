@@ -4,17 +4,20 @@
 #ifndef DYNAMICCOMPONENT_H
 #include "DynamicComponent.h"
 #endif
+#ifndef RTSGAME_H
+#include "RtsGame.h"
+#endif
 
 namespace IStrategizer
 {
     class WorldComponent : public DynamicComponent
     {
     protected:
-        virtual void UpdateAux() = 0;
+        virtual void UpdateAux(RtsGame& game, const WorldClock& p_clock) = 0;
 
     public:
-                WorldComponent(unsigned p_invalidationInterval) : DynamicComponent(p_invalidationInterval) {}
-        void    Update();
+        WorldComponent(unsigned p_invalidationInterval) : DynamicComponent(p_invalidationInterval) {}
+        void Update(const WorldClock& p_clock);
     };
 }
 

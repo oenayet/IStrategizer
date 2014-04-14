@@ -3,52 +3,55 @@
 
 #include <cassert>
 
-class BasePredicate
+namespace IStrategizer
 {
-public:
-    virtual bool Equals( const BasePredicate* p_other) = 0;
-    virtual bool operator()() = 0;
-    virtual bool Call() = 0;
-};
-
-template<class TReciever>
-class Predicate : public BasePredicate
-{
-private:
-    typedef bool (TReciever::*PTF)();
-    PTF         m_ptr2Func;
-    TReciever*  m_ptr2Object;
-
-public:
-    Predicate(TReciever* p_ptr2Object, PTF p_ptr2Func)
+    class BasePredicate
     {
-        m_ptr2Func      = p_ptr2Func;
-        m_ptr2Object    = p_ptr2Object;
-    }
+    public:
+        virtual bool Equals( const BasePredicate* p_other) = 0;
+        virtual bool operator()() = 0;
+        virtual bool Call() = 0;
+    };
 
-    bool Equals(const BasePredicate* p_other)
+    template<class TReciever>
+    class Predicate : public BasePredicate
     {
-        const Predicate<TReciever>* other;
+    private:
+        typedef bool (TReciever::*PTF)();
+        PTF         m_ptr2Func;
+        TReciever*  m_ptr2Object;
 
-        other = static_cast<const Predicate<TReciever>*>(p_other);
+    public:
+        Predicate(TReciever* p_ptr2Object, PTF p_ptr2Func)
+        {
+            m_ptr2Func      = p_ptr2Func;
+            m_ptr2Object    = p_ptr2Object;
+        }
 
-        assert(other != NULL);
-        assert(m_ptr2Object != NULL);
+        bool Equals(const BasePredicate* p_other)
+        {
+            const Predicate<TReciever>* other;
 
-        return other->m_ptr2Object == m_ptr2Object && other->m_ptr2Func == m_ptr2Func;
-    }
+            other = static_cast<const Predicate<TReciever>*>(p_other);
 
-    virtual bool operator()()
-    {
-        assert(m_ptr2Object != NULL);
-        return (m_ptr2Object->*m_ptr2Func)();
-    }
+            assert(other != nullptr);
+            assert(m_ptr2Object != nullptr);
 
-    virtual bool Call()
-    {
-        assert(m_ptr2Object != NULL);
-        return (m_ptr2Object->*m_ptr2Func)();
-    }
-};
+            return other->m_ptr2Object == m_ptr2Object && other->m_ptr2Func == m_ptr2Func;
+        }
+
+        virtual bool operator()()
+        {
+            assert(m_ptr2Object != nullptr);
+            return (m_ptr2Object->*m_ptr2Func)();
+        }
+
+        virtual bool Call()
+        {
+            assert(m_ptr2Object != nullptr);
+            return (m_ptr2Object->*m_ptr2Func)();
+        }
+    };
+}
 
 #endif // PREDICATE_H

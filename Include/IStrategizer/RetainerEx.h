@@ -8,20 +8,22 @@
 #include <string>
 using namespace std;
 
-namespace OLCBP
+namespace IStrategizer
 {
+    const std::string g_CaseBasePath = "IStrategizerEx.cb";
+
     class RetainerEx : public AbstractRetainer
     {
     private:
-        string	    _caseBasePath;
+        string     _caseBasePath;
         bool        _caseBaseLoaded;
 
     protected:
         void                ExecuteCommand(const char* p_cmd);
     public:
                             RetainerEx(string p_caseBasePath);
-        void	            ReadCaseBase();
-        void	            Flush();
+        void             ReadCaseBase();
+        void             Flush();
         void                Retain(const CaseEx* p_case);
                             ~RetainerEx();
     };

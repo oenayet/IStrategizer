@@ -10,33 +10,41 @@
 #include "Vector2.h"
 #endif
 
+#ifndef WORLDRESOURCES_H
+#include "WorldResources.h"
+#endif
+
 namespace IStrategizer
 {
-	class CellFeature;
-}
-using namespace IStrategizer;
-///> class=TrainAction
-///> parent=Action
-class TrainAction : public Action
-{
-	TID				_trainerId;
-	bool			_trained;
+    class CellFeature;
 
-public:
-	TrainAction();
-	TrainAction(const PlanStepParameters& p_parameters);
-	bool		PreconditionsSatisfied();
-	bool		AliveConditionsSatisfied();
-	bool		SuccessConditionsSatisfied();
-	//----------------------------------------------------------------------------------------------
-	// Serialization
-public:
-	string      TypeName()  { return "TrainAction"; }
-	int         TypeSize()  { return sizeof(TrainAction); }
-	UserObject* Prototype() { return new TrainAction; }	
-protected:
-	//----------------------------------------------------------------------------------------------
-	bool		ExecuteAux(unsigned long p_cycles );
-	void		HandleMessage(Message* p_pMsg, bool& p_consumed);
-};
-#endif	// TRAINACTION_H
+    ///> class=TrainAction
+    ///> parent=Action
+    class TrainAction : public Action
+    {
+        OBJECT_SERIALIZABLE(TrainAction);
+
+    public:
+        TrainAction();
+        TrainAction(const PlanStepParameters& params);
+        bool AliveConditionsSatisfied(RtsGame& game);
+        bool SuccessConditionsSatisfied(RtsGame& game);
+
+    protected:
+        void OnSucccess(RtsGame& game, const WorldClock& clock);
+        void OnFailure(RtsGame& game, const WorldClock& clock);
+        bool ExecuteAux(RtsGame& game, const WorldClock& clock);
+        void HandleMessage(RtsGame& game, Message* pMsg, bool& consumed);
+        void InitializePostConditions();
+        void InitializePreConditions();
+
+    private:
+        TID m_trainerId;
+        TID m_traineeId;
+        GameEntity* m_pTrainee;
+        bool m_trainStarted;
+        WorldResources m_requiredResources;
+    };
+}
+
+#endif // TRAINACTION_H

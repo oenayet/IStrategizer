@@ -4,22 +4,20 @@
 
 #include "ConditionEx.h"
 
-///> class=ResearchDone
-///> parent=ConditionEx
-class ResearchDone : public ConditionEx
+namespace IStrategizer
 {
-public:
-                    ResearchDone() {}
-					ResearchDone(PlayerType p_player, ResearchType p_researchId) : ConditionEx(p_player, CONDEX_ResearchDone) { _conditionParameters[PARAM_UpgradeId] = p_researchId; }
-	bool			Evaluate();
-	bool			Consume(int p_amount) { return true; }
-	//----------------------------------------------------------------------------------------------
-	// Serialization
-public:
-	string      TypeName()  { return "ResearchDone"; }
-	int         TypeSize()  { return sizeof(ResearchDone); }
-    UserObject* Prototype() { return new ResearchDone; }	
-    //----------------------------------------------------------------------------------------------
-};
+    ///> class=ResearchDone
+    ///> parent=ConditionEx
+    class ResearchDone : public ConditionEx
+    {
+        OBJECT_SERIALIZABLE(ResearchDone);
 
-#endif	// RESEARCHDONE_H
+    public:
+        ResearchDone() {}
+        ResearchDone(PlayerType p_player, ResearchType p_researchId) : ConditionEx(p_player, CONDEX_ResearchDone) { _conditionParameters[PARAM_ResearchId] = p_researchId; }
+        bool Evaluate(RtsGame& game);
+        bool Consume(int p_amount) { return true; }
+    };
+}
+
+#endif // RESEARCHDONE_H

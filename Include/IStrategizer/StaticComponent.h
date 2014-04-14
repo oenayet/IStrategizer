@@ -10,10 +10,9 @@ namespace IStrategizer
         virtual void    InitializeAux() = 0;
     public:
                         StaticComponent() : m_initalized(false) {}
-        virtual         ~StaticComponent();
+        virtual         ~StaticComponent() {}
         void            Initialize();
     };
 }
-
 
 #endif // STATICCOMPONENT_H

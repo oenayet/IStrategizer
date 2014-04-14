@@ -1,6 +1,6 @@
-#ifndef EXPRESSION_H
-	#include "Expression.h"
-#endif
+#include "Expression.h"
+
+using namespace IStrategizer;
 
 void Expression::InitializeAddressesAux()
 {
@@ -22,7 +22,7 @@ void Expression::Copy(IClonable* p_dest)
 {
     Expression* m_dest = static_cast<Expression*>(p_dest);
 
-	m_dest->_expressionType   = _expressionType;
-	m_dest->_isEvaluated      = _isEvaluated;
-	m_dest->_isSatisfied      = _isSatisfied;
+    m_dest->_expressionType   = _expressionType;
+    m_dest->_isEvaluated      = _isEvaluated;
+    m_dest->_isSatisfied      = _isSatisfied;
 }

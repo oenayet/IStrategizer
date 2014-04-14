@@ -1,21 +1,23 @@
 #include "GoalEx.h"
 #include <cassert>
 
-void GoalEx::Reset(unsigned p_cycles)
+using namespace IStrategizer;
+
+void GoalEx::Reset(RtsGame& game, const WorldClock& p_clock)
 {
-	if (State() != ESTATE_Pending)
-		State(ESTATE_Pending, p_cycles);
+    if (State() != ESTATE_NotPrepared)
+        State(ESTATE_NotPrepared, game, p_clock);
 }
-//////////////////////////////////////////////////////////////////////////
-void GoalEx::UpdateAux(unsigned p_cycles)
+//----------------------------------------------------------------------------------------------
+void GoalEx::UpdateAux(RtsGame& game, const WorldClock& p_clock)
 {
     ExecutionStateType state = State();
 
-	switch (state)
-	{
-	case ESTATE_Pending:
-		if (SuccessConditionsSatisfied())
-			State(ESTATE_Succeeded, p_cycles);
-		break;
-	}
+    switch (state)
+    {
+    case ESTATE_NotPrepared:
+        if (SuccessConditionsSatisfied(game))
+            State(ESTATE_Succeeded, game, p_clock);
+        break;
+    }
 }

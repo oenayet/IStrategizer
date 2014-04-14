@@ -1,11 +1,11 @@
 #ifndef ABSTRACTREVISER_H
 #define ABSTRACTREVISER_H
 
-class CaseBaseEx;
-class CaseEx;
-
-namespace OLCBP
+namespace IStrategizer
 {
+    class CaseBaseEx;
+    class CaseEx;
+
     class AbstractReviser
     {
     public:
@@ -13,4 +13,4 @@ namespace OLCBP
     };
 }
 
-#endif	// ABSTRACTREVISER_H
+#endif // ABSTRACTREVISER_H

@@ -5,36 +5,33 @@
 #include "Action.h"
 #include "CellFeature.h"
 
-#ifndef CHECKPOSITIONFILTERCOUNT_H
-	#include "CheckPositionFilterCount.h"
-#endif
-#ifndef AND_H
-	#include "And.h"
-#endif
-
-///> class=AttackEntityAction
-///> parent=Action
-class AttackEntityAction : public Action
+namespace IStrategizer
 {
+    ///> class=AttackEntityAction
+    ///> parent=Action
+    class AttackEntityAction : public Action
+    {
+        OBJECT_SERIALIZABLE(AttackEntityAction);
 
-public:
-                AttackEntityAction();
-	            AttackEntityAction(const PlanStepParameters& p_parameters, CellFeature *p_cellFeature);
-    void        Copy(IClonable* p_dest);
-	void		Update(unsigned long p_cycles);
-	//----------------------------------------------------------------------------------------------
-	// Serialization
-public:
-	string      TypeName()  { return "AttackEntityAction"; }
-	UserObject* Prototype() { return new AttackEntityAction; }	
-	int         TypeSize()  { return sizeof(AttackEntityAction); }
-protected:
-	//----------------------------------------------------------------------------------------------
-	bool		ExecuteAux(unsigned long p_cycles);
-	void		InitializePreConditions();
-	void		InitializeAliveConditions();
-	void		InitializeSuccessConditions();
-	void		InitializePostConditions();
-};
+    public:
+        AttackEntityAction();
+        AttackEntityAction(const PlanStepParameters& p_parameters);
+        void Copy(IClonable* p_dest);
+        bool AliveConditionsSatisfied(RtsGame& game);
+        bool SuccessConditionsSatisfied(RtsGame& game);
 
-#endif	// ATTACKENTITYACTION_H
+    protected:
+        bool ExecuteAux(RtsGame& game, const WorldClock& p_clock);
+        void InitializeAddressesAux();
+        void HandleMessage(RtsGame& game, Message* p_msg, bool& p_consumed);
+        void InitializePostConditions();
+        void InitializePreConditions();
+
+    private:
+        TID _attackerId;
+        TID _targetId;
+        Vector2 _position;
+    };
+}
+
+#endif // ATTACKENTITYACTION_H

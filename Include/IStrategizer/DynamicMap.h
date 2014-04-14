@@ -11,12 +11,10 @@
 
 namespace IStrategizer
 {
-    using namespace DataStructure;
     template<class TKey, class TValue>
     class DynamicMap : public MapEx<TKey, TValue>, public DynamicComponent
     {
     };
 }
-
 
 #endif // DYNAMICMAP_H

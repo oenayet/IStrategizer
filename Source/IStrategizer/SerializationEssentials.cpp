@@ -1,15 +1,13 @@
-#ifndef SERIALIZATIONESSENTIALS_H
 #include "SerializationEssentials.h"
-#endif
 
 #ifndef OBJECTFACTORY_H
 #include "ObjectFactory.h"
 #endif
 #ifndef OBJECTFORMATTER_H
-	#include "ObjectFormatter.h"
+#include "ObjectFormatter.h"
 #endif
 #ifndef OBJECTSERIALIZER_H
-	#include "ObjectSerializer.h"
+#include "ObjectSerializer.h"
 #endif
 
 #ifndef CASEBASEEX_H
@@ -21,26 +19,26 @@
 #ifndef GAMESTATEEX_H
 #include "GameStateEx.h"
 #endif
-#ifndef ATTACKENEMYGOAL_H
-#include "AttackEnemyGoal.h"
+#ifndef DESTROYENTITYTYPEGOAL_H
+#include "DestroyEntityTypeGoal.h"
 #endif
-#ifndef BUILDBASEGOAL_H
-#include "BuildBaseGoal.h"
+#ifndef COLLECTRESOURCEGOAL_H
+#include "CollectResourceGoal.h"
 #endif
-#ifndef WINWARGUSGOALEX_H
-#include "WinWargusGoalEx.h"
+#ifndef WINGAMEGOAL_H
+#include "WinGameGoal.h"
 #endif
-#ifndef TRAINFORCEGOAL_H
-#include "TrainForceGoal.h"
+#ifndef TRAINARMYGOAL_H
+#include "TrainArmyGoal.h"
+#endif
+#ifndef DEPLOYARMYGOAL_H
+#include "DeployArmyGoal.h"
 #endif
 #ifndef ATTACKENTITYACTION_H
 #include "AttackEntityAction.h"
 #endif
 #ifndef ATTACKGROUNDACTION_H
 #include "AttackGroundAction.h"
-#endif
-#ifndef BUILDACTION_H
-#include "BuildAction.h"
 #endif
 #ifndef BUILDACTIONEX_H
 #include "BuildActionEx.h"
@@ -51,20 +49,20 @@
 #ifndef TRAINACTION_H
 #include "TrainAction.h"
 #endif
+#ifndef MOVEENTITYACTION_H
+#include "MoveEntityAction.h"
+#endif
+#ifndef MOVEACTION_H
+#include "MoveAction.h"
+#endif
 #ifndef RESOURCEEXIST_H
 #include "ResourceExist.h"
 #endif
 #ifndef RESEARCHDONE_H
 #include "ResearchDone.h"
 #endif
-#ifndef ENTITYOBJECTEXIST_H
-#include "EntityObjectExist.h"
-#endif
-#ifndef CHECKENTITYOBJECTSIMILARITY_H
-#include "CheckEntityObjectSimilarity.h"
-#endif
-#ifndef CHECKCOLONYFILTERCOUNT_H
-#include "CheckColonyFilterCount.h"
+#ifndef ENTITYCLASSNEARAREA_H
+#include "EntityClassNearArea.h"
 #endif
 #ifndef NOT_H
 #include "Not.h"
@@ -75,65 +73,53 @@
 #ifndef CELLFEATURE_H
 #include "CellFeature.h"
 #endif
-
 #ifndef PLANGRAPH_H
-	#include "PlanGraph.h"
+#include "PlanGraph.h"
 #endif
+
+using namespace IStrategizer;
 
 void SerializationEssentials::Init()
 {
-	static bool initialized = false;
+    static bool initialized = false;
 
-	if (initialized)
-		return;
+    if (initialized)
+        return;
 
     g_ObjectFactory.AddPrototype(new CaseEx);
     g_ObjectFactory.AddPrototype(new GameStateEx);
 
-    g_ObjectFactory.AddPrototype(new Colony);
-
-    g_ObjectFactory.AddPrototype(new AttackEnemyGoal);
-    g_ObjectFactory.AddPrototype(new BuildBaseGoal);
-    g_ObjectFactory.AddPrototype(new WinWargusGoalEx);
-    g_ObjectFactory.AddPrototype(new TrainForceGoal);
+    g_ObjectFactory.AddPrototype(new CollectResourceGoal);
+    g_ObjectFactory.AddPrototype(new TrainArmyGoal);
+    g_ObjectFactory.AddPrototype(new DeployArmyGoal);
+    g_ObjectFactory.AddPrototype(new DestroyEntityTypeGoal);
+    g_ObjectFactory.AddPrototype(new WinGameGoal);
 
     g_ObjectFactory.AddPrototype(new AttackEntityAction);
     g_ObjectFactory.AddPrototype(new AttackGroundAction);
-    g_ObjectFactory.AddPrototype(new BuildAction);
     g_ObjectFactory.AddPrototype(new ResearchAction);
     g_ObjectFactory.AddPrototype(new TrainAction);
-	g_ObjectFactory.AddPrototype(new BuildActionEx);
+    g_ObjectFactory.AddPrototype(new BuildActionEx);
+    g_ObjectFactory.AddPrototype(new MoveEntityAction);
+    g_ObjectFactory.AddPrototype(new MoveAction);
 
     g_ObjectFactory.AddPrototype(new ResourceExist);
     g_ObjectFactory.AddPrototype(new ResearchDone);
-    g_ObjectFactory.AddPrototype(new EntityObjectExist);
     g_ObjectFactory.AddPrototype(new EntityClassExist);
-    g_ObjectFactory.AddPrototype(new CheckPositionFilterCount);
-    g_ObjectFactory.AddPrototype(new CheckEntityObjectSimilarity);
-    g_ObjectFactory.AddPrototype(new CheckEntityObjectAttribute);
-    g_ObjectFactory.AddPrototype(new CheckEntityClassAttribute);
-    g_ObjectFactory.AddPrototype(new CheckColonyFilterCount);
+    g_ObjectFactory.AddPrototype(new EntityClassNearArea);
     g_ObjectFactory.AddPrototype(new And);
     g_ObjectFactory.AddPrototype(new Not);
     g_ObjectFactory.AddPrototype(new Or);
 
-    g_ObjectFactory.AddPrototype(new RawPlanEx);
-    g_ObjectFactory.AddPrototype(new RawCaseEx);
-    g_ObjectFactory.AddPrototype(new CookedPlan);
-    g_ObjectFactory.AddPrototype(new CookedCase);
-
     g_ObjectFactory.AddPrototype(new PlanGraph);
-    g_ObjectFactory.AddPrototype(new Diagraph<NodeValue, EdgeAnnotation>, "Diagraph(PlanStepEx*,vector(Expression*))");
-    g_ObjectFactory.AddPrototype(new GraphNode<NodeValue, EdgeAnnotation>, "GraphNode(PlanStepEx*,vector(Expression*))");
+    g_ObjectFactory.AddPrototype(new Diagraph<PlanGraphNodeValue, EdgeAnnotation>, "Diagraph(PlanStepEx*,vector(Expression*))");
+    g_ObjectFactory.AddPrototype(new GraphNode<PlanGraphNodeValue, EdgeAnnotation>, "GraphNode(PlanStepEx*,vector(Expression*))");
     g_ObjectFactory.AddPrototype(new GraphEdge<EdgeAnnotation>, "GraphEdge(vector(Expression*))");
     
     g_ObjectFactory.AddPrototype(new CaseBaseEx);
-
-	g_ObjectFactory.AddPrototype(new CellFeature);
-	g_ObjectFactory.AddPrototype(new ForceDescription);
-	g_ObjectFactory.AddPrototype(new BuildingDescription);
+    g_ObjectFactory.AddPrototype(new OlcbpPlan, "AdjListDigraph(PlanStepEx*)");
 
     g_ObjectFormatter.FinalizeTypeTable(g_ObjectSerializer.TypeTable(), g_ObjectFactory.GetObjectTable());
-	
-	initialized = true;
+    
+    initialized = true;
 }

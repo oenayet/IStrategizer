@@ -1,38 +1,37 @@
 #ifndef CASELEARNINGHELPER_H
-#define	CASELEARNINGHELPER_H
+#define CASELEARNINGHELPER_H
 
-#include <vector>
 #include "EngineData.h"
 #include "MessagePumpObserver.h"
-#include "MessagePump.h"
+#include "GameTrace.h"
+#include "GoalMatrixRowEvaluator.h"
+#include <map>
 
-#ifndef GOALSATISFACTIONROW_H
-	#include "GoalSatisfactionRow.h"
-#endif
-
-using namespace std;
-
-class TraceEx;
-class GoalEx;
-class RawLogMessageData;
-
-class CaseLearningHelper : public MessagePumpObserver
+namespace IStrategizer
 {
-private:
-	vector<TraceEx*>		_observedTraces;
-	PlayerType				_humanPlayer;
-	PlayerType				_staticAIBot;
-    GoalSatisfactionRow     _goalSatisfactionRow;
-    GoalSatisfactionEx	    _row;
-    GameStateEx*			ComputeGameState();
-	GoalSatisfactionEx		ComputeGoalSatisfactionRow(unsigned long p_gameCycle);
+    class GoalEx;
+    class RawLogMessageData;
 
-public:
-	CaseLearningHelper(PlayerType p_humanPlayer, PlayerType p_staticAIBot);
-	void				    NotifyMessegeSent(Message* p_message);
-	inline vector<TraceEx*>	ObservedTraces() const { return _observedTraces; }
-    GoalSatisfactionRow&    GoalSatisfactionRow() { return _goalSatisfactionRow; }
+    class CaseLearningHelper : public MessagePumpObserver
+    {
+    private:
+        GameTrace::List m_observedTraces;
+        std::map<GameTrace*, GoalMatrixRow> m_goalMatrix;
+        GoalMatrixRowEvaluator m_goalMatrixRowEvaluator;
+        GoalMatrixRow m_row;
+        GoalMatrixRow m_satisfiedGoals;
 
-};
+        GameStateEx* ComputeGameState();
+        GoalMatrixRow     ComputeGoalMatrixRowSatisfaction(unsigned p_gameCycle);
 
-#endif	// CASELEARNINGHELPER_H
+    public:
+        CaseLearningHelper();
+        void     NotifyMessegeSent(Message* p_message);
+        const GameTrace::List ObservedTraces() const { return m_observedTraces; }
+        const GoalMatrixRowEvaluator& GetGoalMatrixRowEvaluator() const { return m_goalMatrixRowEvaluator; }
+        GoalMatrixRowEvaluator& GetGoalMatrixRowEvaluator() { return m_goalMatrixRowEvaluator; }
+        const GoalMatrixRow& GetGoalMatrixRow(GameTrace* p_pTrace) const { return m_goalMatrix.at(p_pTrace); }
+    };
+}
+
+#endif // CASELEARNINGHELPER_H

@@ -1,6 +1,8 @@
 #ifndef DYNAMICCOMPONENT_H
 #define DYNAMICCOMPONENT_H
 
+#include "WorldClock.h"
+
 namespace IStrategizer
 {
     const int DefaultInvalidationInterval = 50;
@@ -8,12 +10,12 @@ namespace IStrategizer
     class DynamicComponent
     {
     protected:
-        unsigned		m_lastUpdate;
-        unsigned		m_invalidationInterval;
+        unsigned m_lastUpdate;
+        unsigned m_invalidationInterval;
 
-        static bool		m_realTime;
-        static unsigned	m_globalInvalidationInterval;
-        static bool		m_globalInvalidation;
+        static bool m_realTime;
+        static unsigned m_globalInvalidationInterval;
+        static bool m_globalInvalidation;
 
     public:
                     DynamicComponent() : m_invalidationInterval(0), m_lastUpdate(0) {}
@@ -21,7 +23,7 @@ namespace IStrategizer
         virtual     ~DynamicComponent();
         unsigned    InvalidationInterval() { return m_invalidationInterval; }
         void        InvalidationInterval(unsigned p_newInterval) { m_invalidationInterval = p_newInterval; }
-        bool        IsInvalid();
+        bool        IsInvalid(const WorldClock& p_clock);
 
         static bool RealTime() { return m_realTime; }
         static void RealTime(bool p_enable) { m_realTime = p_enable; }

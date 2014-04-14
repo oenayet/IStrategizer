@@ -13,184 +13,211 @@
 #include "GameTechTree.h"
 #include "GameType.h"
 #include "GameEntity.h"
+#include "AdapterEx.h"
+#include "EntityClassExist.h"
+#include "PlayerResources.h"
 
-using namespace OLCBP;
 using namespace IStrategizer;
-using namespace MetaData;
 
-const unsigned MaxPrepTime = 5000;
-const unsigned MaxExecTrialTime = 500;
-const unsigned MaxExecTime = 5000;
+const unsigned MaxPrepTime = 300000;
+const unsigned MaxExecTrialTime = 120000;
+const unsigned MaxExecTime = 120000;
 
 BuildActionEx::BuildActionEx() :
-Action(ACTIONEX_BuildEx, MaxPrepTime, MaxExecTrialTime, MaxExecTime), _buildStarted(false), _buildIssued(false)
+Action(ACTIONEX_Build, MaxPrepTime, MaxExecTrialTime, MaxExecTime), _buildStarted(false), _buildIssued(false)
 {
-	_params[PARAM_BuildingClassId]	= ECLASS_START;
+    _params[PARAM_EntityClassId] = ECLASS_START;
+    CellFeature::Null().To(_params);
 }
 //////////////////////////////////////////////////////////////////////////
 BuildActionEx::BuildActionEx(const PlanStepParameters& p_parameters) :
-Action(ACTIONEX_BuildEx, p_parameters, MaxPrepTime, MaxExecTrialTime, MaxExecTime), _buildStarted(false),  _buildIssued(false)
+Action(ACTIONEX_Build, p_parameters, MaxPrepTime, MaxExecTrialTime, MaxExecTime), _buildStarted(false),  _buildIssued(false)
 {
 }
 //////////////////////////////////////////////////////////////////////////
-void BuildActionEx::OnSucccess(unsigned p_cycles)
+void BuildActionEx::OnSucccess(RtsGame& game, const WorldClock& p_clock)
 {
-	if (_buildIssued)
-	{
-		assert(!_buildArea.IsNull());
-		_buildArea.Unlock(this);
+    if (_buildIssued)
+    {
+        assert(!_buildArea.IsNull());
+        _buildArea.Unlock(this);
 
-		GameEntity *pEntity = g_Game->Self()->GetEntity(_builderId);
+        GameEntity *pEntity = game.Self()->GetEntity(_builderId);
 
-		if (pEntity)
-			pEntity->Unlock(this);
-	}
+        if (pEntity)
+            pEntity->Unlock(this);
+    }
 }
 //////////////////////////////////////////////////////////////////////////
-void BuildActionEx::OnFailure(unsigned p_cycles)
+void BuildActionEx::OnFailure(RtsGame& game, const WorldClock& p_clock)
 {
-	if (_buildIssued)
-	{
-		assert(!_buildArea.IsNull());
-		_buildArea.Unlock(this);
+    if (_buildIssued)
+    {
+        assert(!_buildArea.IsNull());
+        _buildArea.Unlock(this);
+        assert(!_requiredResources.IsNull());
+        _requiredResources.Unlock(this);
 
-		GameEntity *pEntity = g_Game->Self()->GetEntity(_builderId);
-		
-		if (pEntity)
-			pEntity->Unlock(this);
-	}
+        GameEntity *pEntity = game.Self()->GetEntity(_builderId);
+
+        if (pEntity)
+            pEntity->Unlock(this);
+    }
 }
 //////////////////////////////////////////////////////////////////////////
-void BuildActionEx::HandleMessage(Message* p_pMsg, bool& p_consumed)
+void BuildActionEx::HandleMessage(RtsGame& game, Message* p_msg, bool& p_consumed)
 {
-	if(PlanStepEx::State() == ESTATE_Executing && p_pMsg->MessageTypeID() == MSG_EntityCreate) 
-	{
-		EntityCreateMessage*	pMsg = static_cast<EntityCreateMessage*>(p_pMsg);
-		TID						buildingId;
-		GameEntity				*pGameBuilding;
-		Vector2					msgBuildPosition;
+    if(PlanStepEx::State() == ESTATE_Executing && p_msg->MessageTypeID() == MSG_EntityCreate) 
+    {
+        EntityCreateMessage* pMsg = static_cast<EntityCreateMessage*>(p_msg);
+        TID buildingId;
+        GameEntity *pGameBuilding;
+        Vector2 msgBuildPosition;
 
-		if (pMsg->Data()->OwnerId != PLAYER_Self)
-			return;
+        if (pMsg->Data()->OwnerId != PLAYER_Self)
+            return;
 
-		assert(pMsg && pMsg->Data());
-		buildingId = pMsg->Data()->EntityId;
+        assert(pMsg && pMsg->Data());
+        buildingId = pMsg->Data()->EntityId;
 
-		pGameBuilding = g_Game->Self()->GetEntity(buildingId);
-		assert(pGameBuilding);
+        pGameBuilding = game.Self()->GetEntity(buildingId);
+        assert(pGameBuilding);
 
-		msgBuildPosition.X = pMsg->Data()->X;
-		msgBuildPosition.Y = pMsg->Data()->Y;
+        msgBuildPosition.X = pMsg->Data()->X;
+        msgBuildPosition.Y = pMsg->Data()->Y;
 
-		if (msgBuildPosition.X == _buildArea.Pos().X &&
-			msgBuildPosition.Y == _buildArea.Pos().Y &&
-			pGameBuilding->Type() == _params[PARAM_BuildingClassId])
-		{
-			_buildingId = pGameBuilding->Id();
-			_buildStarted = true;
-		}
-	}
+        if (msgBuildPosition.X == _buildArea.Pos().X &&
+            msgBuildPosition.Y == _buildArea.Pos().Y &&
+            pGameBuilding->Type() == _params[PARAM_EntityClassId])
+        {
+            _buildingId = pGameBuilding->Id();
+            _buildStarted = true;
+            assert(!_requiredResources.IsNull());
+            _requiredResources.Unlock(this);
+        }
+    }
 }
 //////////////////////////////////////////////////////////////////////////
-bool BuildActionEx::PreconditionsSatisfied()
+bool BuildActionEx::AliveConditionsSatisfied(RtsGame& game)
 {
-	EntityClassType	builderType;
-	EntityClassType	buildingType;
-	int				ret;
-	bool			success = false;
+    bool builderExist = false;
+    bool buildingExist = false;
+    bool isBuilderConstructing = false;
+    bool success = false;
+    GameEntity *pEntity = nullptr;
 
-	builderType = g_Game->Self()->GetWorkerType();
-	ret = g_Assist.EntityClassExist(make_pair(builderType, 1), success);
-	assert(ret == ERR_Success);
+    assert(PlanStepEx::State() == ESTATE_Executing);
 
-	if (!success)
-		return false;
+    builderExist = g_Assist.DoesEntityObjectExist(_builderId);
 
-	buildingType = (EntityClassType)_params[PARAM_BuildingClassId];
-	ret = g_Assist.PrerequisitesSatisfied(buildingType, success);
+    if (builderExist)
+    {
+        success = true;
+        pEntity = game.Self()->GetEntity(_builderId);
 
-	assert(ret == ERR_Success);
+        assert(pEntity);
+        isBuilderConstructing = (pEntity->Attr(EOATTR_State) == OBJSTATE_Constructing);
 
-	return success;
+        if (!isBuilderConstructing)
+        {
+            LogInfo("Builder with ID=%d of action %s is not in the constructing state", _builderId, ToString().c_str());
+        }
+        else
+        {
+            if (_buildStarted)
+            {
+                buildingExist = g_Assist.DoesEntityObjectExist(_buildingId);
+
+                if (!buildingExist)
+                {
+                    success = false;
+                }
+            }
+        }
+    }
+    else
+    {
+        LogInfo("Builder with ID=%d of action %s does not exist", _builderId, ToString().c_str());
+    }
+
+    return success;
 }
 //////////////////////////////////////////////////////////////////////////
-bool BuildActionEx::AliveConditionsSatisfied()
+bool BuildActionEx::SuccessConditionsSatisfied(RtsGame& game)
 {
-	int			ret;
-	bool		success = false;
-	GameEntity	*pEntity = NULL;
+    assert(PlanStepEx::State() == ESTATE_Executing);
 
-	assert(PlanStepEx::State() == ESTATE_Executing);
+    if (_buildStarted)
+    {
+        int            entityState;
+        GameEntity    *pEntity;
 
-	ret = g_Assist.EntityObjectExist(_builderId, success);
-	assert(ret == ERR_Success);
+        pEntity = game.Self()->GetEntity(_buildingId);    
+        entityState = pEntity->Attr(EOATTR_State);
 
-	if (success)
-	{
-		pEntity = g_Game->Self()->GetEntity(_builderId);
-		success = (pEntity->Attr(EOATTR_State) == OBJSTATE_Constructing);
-	}
+        return entityState != OBJSTATE_BeingConstructed;
+    }
 
-	if (success && _buildStarted)
-	{
-		ret = g_Assist.EntityObjectExist(_buildingId, success);
-		assert(ret == ERR_Success);
-	}
-
-	return success;
+    return false;
 }
 //////////////////////////////////////////////////////////////////////////
-bool BuildActionEx::SuccessConditionsSatisfied()
+bool BuildActionEx::ExecuteAux(RtsGame& game, const WorldClock& p_clock)
 {
-	assert(PlanStepEx::State() == ESTATE_Executing);
+    EntityClassType buildingType;
+    GameEntity *pGameBuilder;
+    AbstractAdapter *pAdapter = g_OnlineCaseBasedPlanner->Reasoner()->Adapter();
+    bool bOk = false;
 
-	if (_buildStarted)
-	{
-		int			entityState;
-		GameEntity	*pEntity;
+    // Adapt builder
+    _builderId = pAdapter->GetEntityObjectId(game.Self()->GetWorkerType(),AdapterEx::WorkerStatesRankVector);
 
-		pEntity = g_Game->Self()->GetEntity(_buildingId);	
-		entityState = pEntity->Attr(EOATTR_State);
+    if (_builderId != INVALID_TID)
+    {
 
-		return entityState != OBJSTATE_BeingConstructed;
-	}
+        buildingType = (EntityClassType)_params[PARAM_EntityClassId];
 
-	return false;
+        // Initialize build state
+        _buildStarted = false;
+
+        // Adapt build position
+        assert(pAdapter);
+        _buildArea = pAdapter->AdaptPositionForBuilding(buildingType);
+
+        // Issue build order
+        pGameBuilder = game.Self()->GetEntity(_builderId);
+        assert(pGameBuilder);
+
+        bOk = pGameBuilder->Build(buildingType, _buildArea.Pos());
+
+        if (bOk)
+        {
+            _buildIssued = true;
+            pGameBuilder->Lock(this);
+            assert(!_buildArea.IsNull());
+            _buildArea.Lock(this);
+            assert(!_requiredResources.IsNull());
+            _requiredResources.Lock(this);
+        }
+    }
+
+    return bOk;
 }
-//////////////////////////////////////////////////////////////////////////
-bool BuildActionEx::ExecuteAux(unsigned long p_cycles)
+//----------------------------------------------------------------------------------------------
+void BuildActionEx::InitializePostConditions()
 {
-	EntityClassType		builderType;
-	EntityClassType		buildingType;
-	GameEntity			*pGameBuilder;
-	AbstractAdapter		*pAdapter = g_OnlineCaseBasedPlanner->Reasoner()->Adapter();
-	bool				bOk;
+    vector<Expression*> m_terms;
+    m_terms.push_back(new EntityClassExist(PLAYER_Self, (EntityClassType)_params[PARAM_EntityClassId], 1, true));
+    _postCondition = new And(m_terms);
+}
+//----------------------------------------------------------------------------------------------
+void BuildActionEx::InitializePreConditions()
+{
+    EntityClassType builderType = g_Game->Self()->GetWorkerType();
+    EntityClassType buildingType = (EntityClassType)_params[PARAM_EntityClassId];
+    _requiredResources = WorldResources::FromEntity(buildingType);
+    vector<Expression*> m_terms;
 
-	builderType = g_Game->Self()->GetWorkerType();
-	buildingType = (EntityClassType)_params[PARAM_BuildingClassId];
-
-	// Initialize build state
-	_buildStarted = false;
-
-	// Adapt build position
-	assert(pAdapter);
-	_buildArea = pAdapter->AdaptPositionForBuilding(buildingType);
-
-	// Adapt builder
-	_builderId = pAdapter->AdaptWorkerForBuild();
-
-	// Issue build order
-	pGameBuilder = g_Game->Self()->GetEntity(_builderId);
-	assert(pGameBuilder);
-
-	bOk = pGameBuilder->Build(buildingType, _buildArea.Pos().X, _buildArea.Pos().Y);
-
-	if (bOk)
-	{
-		_buildIssued = true;
-		pGameBuilder->Lock(this);
-		_buildArea.Lock(this);
-	}
-
-	return bOk;
+    m_terms.push_back(new EntityClassExist(PLAYER_Self, builderType, 1, true));
+    g_Assist.GetPrerequisites(buildingType, PLAYER_Self, m_terms);
+    _preCondition = new And(m_terms);
 }

@@ -16,61 +16,60 @@
 
 #include <fstream>
 using namespace std;
+using namespace IStrategizer;
 
-using namespace OLCBP;
-
-RetainerEx::RetainerEx(string p_caseBasePath) : AbstractRetainer("retainer"), _caseBasePath(p_caseBasePath), _caseBaseLoaded(false)
+RetainerEx::RetainerEx(string p_caseBasePath) : AbstractRetainer("Retainer"), _caseBasePath(p_caseBasePath), _caseBaseLoaded(false)
 {
 }
 //----------------------------------------------------------------------------------------------
 void RetainerEx::ReadCaseBase()
 {
-    Log(LOG_Information, "reading case-base");
+    LogInfo("reading case-base");
 
     Toolbox::MemoryClean(_caseBase);
     _caseBase = new CaseBaseEx();
 
-	fstream file;
+    fstream file;
 
-	file.open(_caseBasePath.c_str(), ios::in | ios::binary);
+    file.open(_caseBasePath.c_str(), ios::in | ios::binary);
 
-	// Read existing case-base
-	if (file.is_open())
-	{
-		file.close();
-		g_ObjectSerializer.Deserialize(_caseBase, _caseBasePath);
-		_caseBaseLoaded = true;
-	}
-	// Create case-base if not found
-	else
-	{
-		file.open(_caseBasePath.c_str(), ios::out | ios::binary | ios::app);
-		file.close();
-		_caseBaseLoaded = true;
-		Flush();
-	}
+    // Read existing case-base
+    if (file.is_open())
+    {
+        file.close();
+        g_ObjectSerializer.Deserialize(_caseBase, _caseBasePath);
+        _caseBaseLoaded = true;
+    }
+    // Create case-base if not found
+    else
+    {
+        file.open(_caseBasePath.c_str(), ios::out | ios::binary | ios::app);
+        file.close();
+        _caseBaseLoaded = true;
+        Flush();
+    }
 }
 //----------------------------------------------------------------------------------------------
 void RetainerEx::Flush()
 {
-	if (_caseBaseLoaded && _caseBase)
-	{
-		Log(LOG_Information, "flushing case-base");
+    if (_caseBaseLoaded && _caseBase)
+    {
+        LogInfo("Flushing case-base");
 
-		g_ObjectSerializer.Serialize(_caseBase, _caseBasePath);
-	}
+        g_ObjectSerializer.Serialize(_caseBase, _caseBasePath);
+    }
     else
-	{
-		Log(LOG_Error, "failed to flushing case-base");
-	}
+    {
+        LogError("Failed to flushing case-base");
+    }
 }
 //-------------------------------------------------------------------------------------------------------------------------------
 void RetainerEx::Retain(const CaseEx* p_case)
 {
     assert(_caseBaseLoaded);
-	assert(p_case);
+    assert(p_case);
 
-    Log(LOG_Information, "retaining case");
+    LogInfo("retaining case");
 
     _caseBase->CaseContainer.push_back(const_cast<CaseEx*>(p_case));
 }
@@ -92,6 +91,6 @@ void RetainerEx::ExecuteCommand(const char* p_cmd)
 //-------------------------------------------------------------------------------------------------------------------------------
 RetainerEx::~RetainerEx()
 {
-	Flush();
+    Flush();
     Toolbox::MemoryClean(_caseBase);
 }

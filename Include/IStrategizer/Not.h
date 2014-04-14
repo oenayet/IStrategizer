@@ -5,20 +5,19 @@
 #include <cassert>
 #include "CompositeExpression.h"
 
-///> class=Not
-///> parent=CompositeExpression
-class Not : public CompositeExpression
+namespace IStrategizer
 {
-public:
-                Not() {}
-                Not(Expression* p_expression) : CompositeExpression(p_expression) {}
-    bool	    Evaluate() { assert(_expressions.size() == 1); _isEvaluated = true; return _isSatisfied = !_expressions[0]->Evaluate(); }
-    //----------------------------------------------------------------------------------------------
-    // Serialization
-    string      TypeName()  { return "Not"; }
-    int         TypeSize()  { return sizeof(Not); }
-    UserObject* Prototype() { return new Not; }
-    //----------------------------------------------------------------------------------------------
-};
+    ///> class=Not
+    ///> parent=CompositeExpression
+    class Not : public CompositeExpression
+    {
+        OBJECT_SERIALIZABLE(Not);
+
+    public:
+        Not() {}
+        Not(Expression* p_expression) : CompositeExpression(p_expression) {}
+        bool Evaluate(RtsGame& game) { assert(_expressions.size() == 1); _isEvaluated = true; return _isSatisfied = !_expressions[0]->Evaluate(game); }
+    };
+}
 
 #endif // NOT_H

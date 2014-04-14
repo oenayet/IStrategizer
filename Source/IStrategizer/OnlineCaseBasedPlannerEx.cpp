@@ -35,7 +35,7 @@
 #include "Toolbox.h"
 #endif
 #ifndef ONLINEPLANEXPANSIONEXECUTIONEX_H
-#include "OnlinePlanExpansionExecutionEx.h"
+#include "OnlinePlanExpansionExecution.h"
 #endif
 
 #include "RtsGame.h"
@@ -44,13 +44,12 @@
 #include "Vector2.h"
 #include "AttackGroundAction.h"
 #include "CellFeature.h"
-#include "BuildAction.h"
 
-using namespace OLCBP;
+using namespace IStrategizer;
 
-OLCBP::OnlineCaseBasedPlannerEx *g_OnlineCaseBasedPlanner = NULL;
+OnlineCaseBasedPlannerEx *g_OnlineCaseBasedPlanner = nullptr;
 
-OnlineCaseBasedPlannerEx::OnlineCaseBasedPlannerEx() : _caseBasedReasoner(NULL), _onlineExpansionExecution(NULL)
+OnlineCaseBasedPlannerEx::OnlineCaseBasedPlannerEx() : _caseBasedReasoner(nullptr), _onlineExpansionExecution(nullptr)
 {
 }
 //----------------------------------------------------------------------------------------------
@@ -68,46 +67,12 @@ void OnlineCaseBasedPlannerEx::Init(GoalEx *p_initialGoal)
 
     _caseBasedReasoner->Initialize();
 
-    _onlineExpansionExecution = new OnlinePlanExpansionExecutionEx(p_initialGoal, _caseBasedReasoner);
+    _onlineExpansionExecution = new OnlinePlanExpansionExecution(p_initialGoal, _caseBasedReasoner);
 }
 //----------------------------------------------------------------------------------------------
-void OnlineCaseBasedPlannerEx::Update(unsigned long p_gameCycle)
+void OnlineCaseBasedPlannerEx::Update(const WorldClock& p_clock)
 {
-	//static unsigned long lastGameCycle = INT_MAX;
-	//if(p_gameCycle < lastGameCycle)
-	//{
-	//	PlanStepParameters aParams;
-
-	//	aParams[PARAM_PlayerId] = PLAYER_Self;
-	//	aParams[PARAM_WorkerClassId] = ECLASS_Peon;
-	//	aParams[PARAM_BuildingClassId] = ECLASS_PigFarm;
-	//	
-	//	WorldModel::CellFeature vv;
-	//	vv.Clear();
-	//	vv.m_alliedForceDescription.m_numberOfUnits = 1;
-	//	vv.m_alliedForceDescription.m_totalHP = 30;
-	//	BuildAction b(aParams,&vv);
-	//	b.InitializeConditions();
-	//	g_RtsGame->Map()->Update();
-	//	b.PrepareForExecution();
-
-	//	b.Execute();
-
-	//	aParams[PARAM_PlayerId] = PLAYER_Self;
-	//	aParams[PARAM_EntityClassId] = ECLASS_Peon;
-	//	WorldModel::CellFeature v;
-	//	v.m_enemyForceDescription.m_numberOfUnits = 1;
-	//	v.m_enemyForceDescription.m_totalHP = 30;
-	//	AttackGroundAction a(aParams, &v);
-	//	a.InitializeConditions();
-	//	g_RtsGame->Map()->Update();
-	//	a.PrepareForExecution();
-	//	a.Execute();
-
-	//	lastGameCycle = p_gameCycle;
-	//}
-
-	_onlineExpansionExecution->Update(p_gameCycle);
+    _onlineExpansionExecution->Update(p_clock);
 }
 //----------------------------------------------------------------------------------------------
 OnlineCaseBasedPlannerEx::~OnlineCaseBasedPlannerEx()

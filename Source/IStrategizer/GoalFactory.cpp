@@ -1,71 +1,81 @@
-#include "WinWargusGoalEx.h"
-#include "AttackEnemyGoal.h"
-#include "BuildBaseGoal.h"
-#include "TrainForceGoal.h"
+#include "WinGameGoal.h"
+#include "DeployArmyGoal.h"
+#include "DestroyEntityTypeGoal.h"
+#include "CollectResourceGoal.h"
+#include "TrainArmyGoal.h"
 #include "GoalFactory.h"
+
+using namespace IStrategizer;
 
 //-------------------------------------------------------------------------------------------------------------------------
 GoalEx* GoalFactory::GetGoal(GoalType p_goalType, PlanStepParameters& p_parameters, bool p_initConditions)
 {
-	GoalEx* goal;
+    GoalEx* goal;
 
-	switch(p_goalType)
-	{
-	case GOALEX_BuildBase:
-		goal = new BuildBaseGoal(p_parameters);
-		break;
+    switch(p_goalType)
+    {
+    case GOALEX_CollectResource:
+        goal = new CollectResourceGoal(p_parameters);
+        break;
 
-	case GOALEX_WinGame:
-		goal = new WinWargusGoalEx(p_parameters);
-		break;
+    case GOALEX_WinGame:
+        goal = new WinGameGoal(p_parameters);
+        break;
 
-	case GOALEX_TrainForce:
-		goal = new TrainForceGoal(p_parameters);
-		break;
+    case GOALEX_TrainArmy:
+        goal = new TrainArmyGoal(p_parameters);
+        break;
 
-	case GOALEX_AttackEnemy:
-		goal = new AttackEnemyGoal(p_parameters);
-		break;
+    case GOALEX_DeployArmy:
+        goal = new DeployArmyGoal(p_parameters);
+        break;
 
-	default:
-		throw exception("Not supported goal");
-	}
+    case GOALEX_DestroyEntityType:
+        goal = new DestroyEntityTypeGoal(p_parameters);
+        break;
 
-	if(p_initConditions)
-		goal->InitializeConditions();
+    default:
+        throw exception("Not supported goal");
+    }
 
-	return goal;
+    if(p_initConditions)
+        goal->InitializeConditions();
+
+    return goal;
 }
 //----------------------------------------------------------------------------------------------
 GoalEx* GoalFactory::GetGoal(GoalType p_goalType, bool p_initConditions)
 {
-	int m_index = 0;
-	GoalEx* goal;
+    GoalEx* goal;
 
-	switch(p_goalType)
-	{
-	case GOALEX_BuildBase:
-		goal = new BuildBaseGoal();
-		break;
+    switch(p_goalType)
+    {
+    case GOALEX_CollectResource:
+        goal = new CollectResourceGoal();
+        break;
 
-	case GOALEX_WinGame:
-		goal = new WinWargusGoalEx();
-		break;
+    case GOALEX_WinGame:
+        goal = new WinGameGoal();
+        break;
 
-	case GOALEX_TrainForce:
-		goal = new TrainForceGoal();
-		break;
+    case GOALEX_TrainArmy:
+        goal = new TrainArmyGoal();
+        break;
 
-	case GOALEX_AttackEnemy:
-		goal = new AttackEnemyGoal();
-		break;
+    case GOALEX_DeployArmy:
+        goal = new DeployArmyGoal();
+        break;
 
-	default:
-		throw exception("Not supported goal");
-	}
+    case GOALEX_DestroyEntityType:
+        goal = new DestroyEntityTypeGoal();
+        break;
 
-	if(p_initConditions)
-		goal->InitializeConditions();
+    default:
+        throw exception("Not supported goal");
+    }
 
-	return goal;
+    if(p_initConditions)
+        goal->InitializeConditions();
+
+    return goal;
 }

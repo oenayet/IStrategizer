@@ -4,41 +4,38 @@
 
 #include "Action.h"
 #ifndef AND_H
-	#include "And.h"
+#include "And.h"
 #endif
+
+#include "Vector2.h"
 
 namespace IStrategizer
 {
-	class CellFeature;
+    class CellFeature;
+    
+    ///> class=AttackGroundAction
+    ///> parent=Action
+    class AttackGroundAction : public Action
+    {
+    public:
+        OBJECT_SERIALIZABLE(AttackGroundAction);
+
+        AttackGroundAction();
+        AttackGroundAction(const PlanStepParameters& p_parameters);
+        bool AliveConditionsSatisfied(RtsGame& game);
+        bool SuccessConditionsSatisfied(RtsGame& game);
+
+    protected:
+        bool ExecuteAux(RtsGame& game, const WorldClock& p_clock);
+        void InitializeAddressesAux() ;
+        void HandleMessage(RtsGame& game, Message* p_msg, bool& p_consumed);
+        void InitializePostConditions();
+        void InitializePreConditions();
+
+    private:
+        TID _attackerId;
+        Vector2 _position;
+    };
 }
-using namespace IStrategizer;
-///> class=AttackGroundAction
-///> parent=Action
-class AttackGroundAction : public Action
-{
-	
-public:
-                AttackGroundAction();
-				AttackGroundAction(const PlanStepParameters& p_parameters, CellFeature* p_targetCell);
-	////> type=CellFeature*
-	CellFeature	*_targetCell;
-	//----------------------------------------------------------------------------------------------
-	// Serialization
-public:
-	string      TypeName()  { return "AttackGroundAction"; }
-    int         TypeSize()  { return sizeof(AttackGroundAction); }
-    UserObject* Prototype() { return new AttackGroundAction; }	
-	//----------------------------------------------------------------------------------------------
-	// Serialization
-protected:
-	void		InitializeAddressesAux() ;
-	//----------------------------------------------------------------------------------------------
-	bool		ExecuteAux(unsigned long p_cycles);
-	void		InitializePreConditions();
-	void		InitializeAliveConditions();
-	void		InitializeSuccessConditions();
-	void		InitializePostConditions();
-};
 
-
-#endif	// ATTACKGROUNDACTION_H
+#endif // ATTACKGROUNDACTION_H

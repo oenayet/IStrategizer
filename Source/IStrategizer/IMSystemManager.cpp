@@ -5,94 +5,115 @@
 #include "GroundControlIM.h"
 #include "RtsGame.h"
 #include "WorldMap.h"
+#include "Logger.h"
 
-using namespace MetaData;
 using namespace IStrategizer;
 using namespace std;
 
-void IMSystemManager::Update(unsigned p_gameCycle)
+void IMSystemManager::Update(const WorldClock& p_clock)
 {
-	for (IMContainer::iterator itr = m_managedMaps.begin(); itr != m_managedMaps.end(); ++itr)
-	{
-		itr->second->Update(p_gameCycle);
-	}
+    unsigned elapsedTimeSinceLastUpdateMs = p_clock.ElapsedMilliseconds() - m_lastUpdateTimeMs;
+
+    for (IMContainer::iterator itr = m_managedMaps.begin(); itr != m_managedMaps.end(); ++itr)
+    {
+        switch (itr->first)
+        {
+        case IM_BuildingData:
+            if (elapsedTimeSinceLastUpdateMs > m_params.OccupanceIMUpdateInterval)
+                continue;
+            break;
+        case IM_GroundControl:
+            if (elapsedTimeSinceLastUpdateMs > m_params.GrndCtrlIMUpdateInterval)
+                continue;
+            break;
+        }
+
+        itr->second->Update(p_clock);
+    }
+
+    m_lastUpdateTimeMs = p_clock.ElapsedMilliseconds();
 }
 //////////////////////////////////////////////////////////////////////////
 void IMSystemManager::RegisterGameObj(TID p_objId, PlayerType p_ownerId)
 {
-	for (IMContainer::iterator itr = m_managedMaps.begin(); itr != m_managedMaps.end(); ++itr)
-	{
-		itr->second->RegisterGameObj(p_objId, p_ownerId);
-	}
+    for (IMContainer::iterator itr = m_managedMaps.begin(); itr != m_managedMaps.end(); ++itr)
+    {
+        itr->second->RegisterGameObj(p_objId, p_ownerId);
+    }
 }
 //////////////////////////////////////////////////////////////////////////
 void IMSystemManager::UnregisterGameObj(TID p_objId)
 {
-	for (IMContainer::iterator itr = m_managedMaps.begin(); itr != m_managedMaps.end(); ++itr)
-	{
-		itr->second->UnregisterGameObj(p_objId);
-	}
+    for (IMContainer::iterator itr = m_managedMaps.begin(); itr != m_managedMaps.end(); ++itr)
+    {
+        itr->second->UnregisterGameObj(p_objId);
+    }
 }
 //////////////////////////////////////////////////////////////////////////
-void IMSystemManager::Init(const IMSysManagerParam& p_param)
+void IMSystemManager::Init(const IMSysManagerParam& p_params)
 {
-	int			worldWidth;
-	int			worldHeight;
-	WorldMap	*pMap = NULL;
-	int			cellSize;
+    int worldWidth;
+    int worldHeight;
+    WorldMap *pMap = nullptr;
+    int cellSize;
 
-	if (m_initialized)
-		return;
+    if (m_initialized)
+    {
+        LogError("IMSystemManager already initialized, will do nothing ...");
+        return;
+    }
 
-	pMap = g_Game->Map();
-	worldWidth = pMap->Size().X;
-	worldHeight = pMap->Size().Y;
-	
-	cellSize = p_param.BuildingDataIMCellSize;
-	cellSize = min(cellSize, worldWidth);
-	while (worldWidth % cellSize != 0)
-		++cellSize;
+    m_params = p_params;
 
-	OccupanceDataIM *pBuildingDataIM = new OccupanceDataIM(IM_BuildingData);
-	assert(pBuildingDataIM);
-	pBuildingDataIM->Init(cellSize, cellSize, worldWidth, worldHeight);
-	RegisterIM(pBuildingDataIM, IM_BuildingData);
+    pMap = g_Game->Map();
+    worldWidth = pMap->Size().X;
+    worldHeight = pMap->Size().Y;
+    
+    cellSize = p_params.BuildingDataIMCellSize;
+    cellSize = min(cellSize, worldWidth);
+    while (worldWidth % cellSize != 0)
+        ++cellSize;
 
-	cellSize = p_param.GroundControlIMCellSize;
-	cellSize = min(cellSize, worldWidth);
-	while (worldWidth % cellSize != 0)
-		++cellSize;
+    OccupanceDataIM *pBuildingDataIM = new OccupanceDataIM(IM_BuildingData);
+    assert(pBuildingDataIM);
+    pBuildingDataIM->Init(cellSize, cellSize, worldWidth, worldHeight);
+    RegisterIM(pBuildingDataIM, IM_BuildingData);
 
-	GroundControlIM *pGroundControlIM = new GroundControlIM(IM_GroundControl);
-	assert(pGroundControlIM);
-	pGroundControlIM->Init(cellSize, cellSize, worldWidth, worldHeight);
-	RegisterIM(pGroundControlIM, IM_GroundControl);
+    cellSize = p_params.GroundControlIMCellSize;
+    cellSize = min(cellSize, worldWidth);
+    while (worldWidth % cellSize != 0)
+        ++cellSize;
 
-	m_initialized = true;
+    GroundControlIM *pGroundControlIM = new GroundControlIM(IM_GroundControl);
+    assert(pGroundControlIM);
+    pGroundControlIM->Init(cellSize, cellSize, worldWidth, worldHeight);
+    RegisterIM(pGroundControlIM, IM_GroundControl);
+
+    m_initialized = true;
 }
 //////////////////////////////////////////////////////////////////////////
 void IMSystemManager::Finalize()
 {
-	for (IMContainer::iterator itr = m_managedMaps.begin(); itr != m_managedMaps.end(); ++itr)
-		delete (itr->second);
+    for (IMContainer::iterator itr = m_managedMaps.begin(); itr != m_managedMaps.end(); ++itr)
+        delete (itr->second);
 
-	m_managedMaps.clear();
+    m_managedMaps.clear();
 
-	m_initialized = false;
+    m_initialized = false;
 }
 //////////////////////////////////////////////////////////////////////////
 void IMSystemManager::RegisterIM(InfluenceMap *p_pMap, IMType p_mapTypeId)
 {
-	assert(p_pMap);
+    assert(p_pMap);
 
-	if (m_managedMaps.find(p_mapTypeId) == m_managedMaps.end())
-		m_managedMaps[p_mapTypeId] = p_pMap;
+    if (m_managedMaps.find(p_mapTypeId) == m_managedMaps.end())
+        m_managedMaps[p_mapTypeId] = p_pMap;
 }
 //////////////////////////////////////////////////////////////////////////
 InfluenceMap* IMSystemManager::GetIM(IMType p_mapTypeId)
 {
-	if (m_managedMaps.find(p_mapTypeId) == m_managedMaps.end())
-		return NULL;
+    if (m_managedMaps.find(p_mapTypeId) == m_managedMaps.end())
+        return nullptr;
 
-	return m_managedMaps[p_mapTypeId];
+    return m_managedMaps[p_mapTypeId];
 }

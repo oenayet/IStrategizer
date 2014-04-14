@@ -1,120 +1,123 @@
 #include "Action.h"
-#include <cassert>
+
 #ifndef AND_H
 #include "And.h"
 #endif
+#ifndef LOGGER_H
+#include "Logger.h"
+#endif
+#ifndef COMPOSITEEXPRESSION_H
+#include "CompositeExpression.h"
+#endif
+#ifndef RTSGAME_H
+#include "RtsGame.h"
+#endif
+#ifndef TURE_H
+#include "True.h"
+#endif
+#include <cassert>
+
+using namespace IStrategizer;
 
 Action::Action(ActionType p_actionType, unsigned p_maxPrepTime, unsigned p_maxExecTrialTime, unsigned p_maxExecTime)
-: PlanStepEx(p_actionType, ESTATE_END), _preCondition(NULL), _aliveCondition(NULL)
+: PlanStepEx(p_actionType, ESTATE_END), _preCondition(nullptr)
 {
-	_stateTimeout[INDEX(ESTATE_NotPrepared, ExecutionStateType)] = p_maxPrepTime;
-	_stateTimeout[INDEX(ESTATE_Pending, ExecutionStateType)] = p_maxExecTime;
-	_stateTimeout[INDEX(ESTATE_Executing, ExecutionStateType)] = p_maxExecTrialTime;
+    _stateTimeout[INDEX(ESTATE_NotPrepared, ExecutionStateType)] = p_maxPrepTime;
+    _stateTimeout[INDEX(ESTATE_Executing, ExecutionStateType)] = p_maxExecTrialTime;
 }
 //////////////////////////////////////////////////////////////////////////
 Action::Action(ActionType p_actionType, const PlanStepParameters& p_parameters, unsigned p_maxPrepTime,  unsigned p_maxExecTrialTime, unsigned p_maxExecTime)
-: PlanStepEx(p_actionType, ESTATE_END, p_parameters), _preCondition(NULL), _aliveCondition(NULL)
+: PlanStepEx(p_actionType, ESTATE_END, p_parameters), _preCondition(nullptr)
 {
-	_stateTimeout[INDEX(ESTATE_NotPrepared, ExecutionStateType)] = p_maxPrepTime;
-	_stateTimeout[INDEX(ESTATE_Pending, ExecutionStateType)] = p_maxExecTime;
-	_stateTimeout[INDEX(ESTATE_Executing, ExecutionStateType)] = p_maxExecTrialTime;
+    _stateTimeout[INDEX(ESTATE_NotPrepared, ExecutionStateType)] = p_maxPrepTime;
+    _stateTimeout[INDEX(ESTATE_Executing, ExecutionStateType)] = p_maxExecTrialTime;
 }
 //////////////////////////////////////////////////////////////////////////
-void Action::State(ExecutionStateType p_state, unsigned p_cycles)
+void Action::State(ExecutionStateType p_state, RtsGame& game, const WorldClock& p_clock)
 {
-	PlanStepEx::State(p_state, p_cycles);
+    PlanStepEx::State(p_state, game, p_clock);
 
-	switch (p_state)
-	{
-	case ESTATE_Succeeded:
-		OnSucccess(p_cycles);
-		break;
-	case ESTATE_Failed:
-		OnFailure(p_cycles);
-		break;
-	}
+    switch (p_state)
+    {
+    case ESTATE_Succeeded:
+        OnSucccess(game, p_clock);
+        break;
+    case ESTATE_Failed:
+        OnFailure(game, p_clock);
+        break;
+    }
+}
+bool Action::PreconditionsSatisfied(RtsGame& game)
+{
+    if (_preCondition == nullptr) { InitializeConditions(); }
+    bool satisfied = _preCondition->Evaluate(game);
+
+    return satisfied;
 }
 //////////////////////////////////////////////////////////////////////////
 void Action::InitializeConditions()
 {
-	InitializePreConditions();
-	InitializePostConditions();
+    PlanStepEx::InitializeConditions();
+    InitializePreConditions();
 }
 //////////////////////////////////////////////////////////////////////////
-int Action::PrepareForExecution(unsigned p_cyles)
+bool Action::Execute(RtsGame& game, const WorldClock& p_clock)
 {
-	assert(0);
-	//assert(State() == ESTATE_NotPrepared);
+    bool bOk;
 
-	//if(_prepTime == 0)
-	//{
-	//	_prepTime = p_cyles;
-	//}
-	//else if(p_cyles - _prepTime > _maxPrepTime)
-	//{
-	//	_prepTime = 0;
-	//	State(ESTATE_Failed);
-	//}
+    assert(PlanStepEx::State() == ESTATE_NotPrepared);
+    bOk = ExecuteAux(game, p_clock);
 
-	//if(PreconditionsSatisfied())
-	//{
-	//	// Reset the prep start time in case the action failed while execution and we try to prepare it again
-	//	_prepTime = 0;
-	//	State(ESTATE_Pending);
-	//}
-
-	return ERR_Success;
+    return bOk;
 }
 //////////////////////////////////////////////////////////////////////////
-bool Action::Execute(unsigned p_cycles)
+void Action::Reset(RtsGame& game, const WorldClock& p_clock)
 {
-	bool bOk;
-
-	assert(PlanStepEx::State() == ESTATE_Pending);
-	bOk = ExecuteAux(p_cycles);
-
-	return bOk;
+    if (PlanStepEx::State() != ESTATE_NotPrepared)
+        State(ESTATE_NotPrepared, game, p_clock);
 }
 //////////////////////////////////////////////////////////////////////////
-void Action::Reset(unsigned p_cycles)
+void Action::UpdateAux(RtsGame& game, const WorldClock& p_clock)
 {
-	if (PlanStepEx::State() != ESTATE_NotPrepared)
-		State(ESTATE_NotPrepared, p_cycles);
-}
-//////////////////////////////////////////////////////////////////////////
-void Action::UpdateAux(unsigned p_cycles)
-{
-	ExecutionStateType state = PlanStepEx::State();
-	
-	switch (state)
-	{
-	case ESTATE_NotPrepared:
-		if (PreconditionsSatisfied())
-			State(ESTATE_Pending, p_cycles);
-		break;
+    ExecutionStateType state = PlanStepEx::State();
+    
+    switch (state)
+    {
+    case ESTATE_NotPrepared:
+        if (PreconditionsSatisfied(game))
+        {
+            if (Execute(game, p_clock))
+            {
+                State(ESTATE_Executing, game, p_clock);
+            }
+            else
+            {
+                LogInfo("Executing '%s' failed", ToString().c_str());
+            }
+        }
+        break;
 
-	case ESTATE_Pending:
-		if (Execute(p_cycles))
-			State(ESTATE_Executing, p_cycles);
-		else
-			printf("Planner: Executing '%s' failed\n", ToString());
-		break;
-
-	case ESTATE_Executing:
-		if (SuccessConditionsSatisfied())
-			State(ESTATE_Succeeded, p_cycles);
-		else if (!AliveConditionsSatisfied())
-			State(ESTATE_Failed, p_cycles);
-		break;
-	}
+    case ESTATE_Executing:
+        if(AliveConditionsSatisfied(game))
+        { 
+            if (SuccessConditionsSatisfied(game))
+                State(ESTATE_Succeeded, game, p_clock);
+        }
+        else
+        {
+            LogInfo("%s alive conditions not satisfied, failing it", ToString().c_str());
+            State(ESTATE_Failed, game, p_clock);
+        }
+        break;
+    }
 }
 //////////////////////////////////////////////////////////////////////////
 void Action::Copy(IClonable* p_dest)
 {
-	PlanStepEx::Copy(p_dest);
+    PlanStepEx::Copy(p_dest);
 
-	Action* m_dest = static_cast<Action*>(p_dest);
+    Action* m_dest = static_cast<Action*>(p_dest);
 
-	m_dest->_preCondition	= _preCondition ? static_cast<CompositeExpression*>(_preCondition->Clone()) : NULL;
-	m_dest->_aliveCondition	= _aliveCondition ? static_cast<CompositeExpression*>(_aliveCondition->Clone()) : NULL;
+    m_dest->_preCondition = _preCondition ? static_cast<CompositeExpression*>(_preCondition->Clone()) : nullptr;
+    m_dest->_postCondition = _postCondition ? static_cast<CompositeExpression*>(_postCondition->Clone()) : nullptr;
 }

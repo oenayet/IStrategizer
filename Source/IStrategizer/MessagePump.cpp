@@ -4,24 +4,25 @@
 #ifndef METADATA_H
 #include "MetaData.h"
 #endif
-using namespace MetaData;
+using namespace IStrategizer;
 
 MessagePump::MessagePump()
 {
-	AddMessage(MSG_Input);
-	AddMessage(MSG_EntityCreate);
-	AddMessage(MSG_EntityDestroy);
-	AddMessage(MSG_EntityRenegade);
-	AddMessage(MSG_GameStart);
-	AddMessage(MSG_GameEnd);
+    AddMessage(MSG_Input);
+    AddMessage(MSG_EntityCreate);
+    AddMessage(MSG_EntityDestroy);
+    AddMessage(MSG_EntityRenegade);
+    AddMessage(MSG_GameStart);
+    AddMessage(MSG_GameEnd);
+    AddMessage(MSG_PlanStructureChange);
 
-	// Obsolete Messages
-	AddMessage(MSG_Log);
-	AddMessage(MSG_GameExit);
-	AddMessage(MSG_EntityAttacked);
-	AddMessage(MSG_EntityKilled);
-	AddMessage(MSG_EntityTrained);
-	AddMessage(MSG_BuildingBuilt);
+    // Obsolete Messages
+    AddMessage(MSG_GameActionLog);
+    AddMessage(MSG_GameExit);
+    AddMessage(MSG_EntityAttacked);
+    AddMessage(MSG_EntityKilled);
+    AddMessage(MSG_EntityTrained);
+    AddMessage(MSG_BuildingBuilt);
 }
 //----------------------------------------------------------------------------------------------
 MessagePump& MessagePump::Instance()
@@ -51,7 +52,7 @@ void MessagePump::DeliverMessage(Message* p_message)
     delete p_message;
 }
 //----------------------------------------------------------------------------------------------
-void MessagePump::Update(unsigned long p_gameCycle)
+void MessagePump::Update(const WorldClock& p_clock)
 {
     Message* m_message;
 

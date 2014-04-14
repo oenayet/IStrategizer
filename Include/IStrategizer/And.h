@@ -4,20 +4,23 @@
 
 #include "CompositeExpression.h"
 
-///> class=And
-///> parent=CompositeExpression
-class And : public CompositeExpression
+namespace IStrategizer
 {
-public:
-                And() {}
-			    And(const vector<Expression*>& p_expressions) : CompositeExpression(p_expressions) {}
-    bool	    Evaluate();
-    //----------------------------------------------------------------------------------------------
-    // Serialization
-    string      TypeName()  { return "And"; }
-    int         TypeSize()  { return sizeof(And); }
-    UserObject* Prototype() { return new And; }
-    //----------------------------------------------------------------------------------------------
-};
+    ///> class=And
+    ///> parent=CompositeExpression
+    class And : public CompositeExpression
+    {
+        OBJECT_SERIALIZABLE(And);
+
+    protected:
+        void And::InitializeAddressesAux();
+
+    public:
+        And() {}
+        And(const std::vector<Expression*>& p_expressions) : CompositeExpression(p_expressions) {}
+        bool Evaluate(RtsGame& game);
+
+    };
+}
 
 #endif // AND_H

@@ -5,7 +5,7 @@
 #ifndef METADATA_H
 #include "MetaData.h"
 #endif
-using namespace MetaData;
+using namespace IStrategizer;
 
 void MessagePumpSubject::AddMessage(MessageType p_messageTypeID)
 {
@@ -39,14 +39,14 @@ void MessagePumpSubject::UnRegisterForMessage(MessageType p_messageTypeID, Messa
 //////////////////////////////////////////////////////////////////////////
 void MessagePumpSubject::UnregisterForAllMessages(MessagePumpObserver* p_observer)
 {
-	ObserverList* m_observerList;
+    ObserverList* m_observerList;
 
-	for(MessageObserversTable::iterator itr = _messageObserversTable.begin();
-		itr != _messageObserversTable.end(); ++itr)
-	{
-		m_observerList = itr->second;
-		m_observerList->remove(p_observer);
-	}
+    for(MessageObserversTable::iterator itr = _messageObserversTable.begin();
+        itr != _messageObserversTable.end(); ++itr)
+    {
+        m_observerList = itr->second;
+        m_observerList->remove(p_observer);
+    }
 }
 //----------------------------------------------------------------------------------------------
 void MessagePumpSubject::OnMessageSent(Message* p_message)

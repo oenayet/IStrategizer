@@ -12,39 +12,42 @@
 #ifndef MAPAREA_H
 #include "MapArea.h"
 #endif
+#ifndef WORLDRESOURCES_H
+#include "WorldResources.h"
+#endif
 
 namespace IStrategizer
 {
-	class CellFeature;
-}
-using namespace IStrategizer;
-///> class=BuildActionEx
-///> parent=Action
-class BuildActionEx : public Action
-{
-	TID						_buildingId;
-	TID						_builderId;
-	IStrategizer::MapArea	_buildArea;
-	bool					_buildStarted;
-	bool					_buildIssued;
+    class CellFeature;
 
-public:
-	BuildActionEx();
-	BuildActionEx(const PlanStepParameters& p_parameters);
-	bool		PreconditionsSatisfied();
-	bool		AliveConditionsSatisfied();
-	bool		SuccessConditionsSatisfied();
-	//----------------------------------------------------------------------------------------------
-	// Serialization
-public:
-	string      TypeName()  { return "BuildActionEx"; }
-	int         TypeSize()  { return sizeof(BuildActionEx); }
-	UserObject* Prototype() { return new BuildActionEx; }	
-protected:
-	//----------------------------------------------------------------------------------------------
-	void		OnSucccess(unsigned p_cycles);
-	void		OnFailure(unsigned p_cycles);
-	bool		ExecuteAux(unsigned long p_cycles );
-	void		HandleMessage(Message* p_pMsg, bool& p_consumed);
-};
-#endif	// BUILDACTIONEX_H
+    ///> class=BuildActionEx
+    ///> parent=Action
+    class BuildActionEx : public Action
+    {
+        OBJECT_SERIALIZABLE(BuildActionEx);
+
+    public:
+        BuildActionEx();
+        BuildActionEx(const PlanStepParameters& p_parameters);
+        bool AliveConditionsSatisfied(RtsGame& game);
+        bool SuccessConditionsSatisfied(RtsGame& game);
+
+    protected:
+        void OnSucccess(RtsGame& game, const WorldClock& p_clock);
+        void OnFailure(RtsGame& game, const WorldClock& p_clock);
+        bool ExecuteAux(RtsGame& game, const WorldClock& p_clock);
+        void HandleMessage(RtsGame& game, Message* p_msg, bool& p_consumed);
+        void InitializePostConditions();
+        void InitializePreConditions();
+
+    private:
+        TID _buildingId;
+        TID _builderId;
+        IStrategizer::MapArea _buildArea;
+        bool _buildStarted;
+        bool _buildIssued;
+        IStrategizer::WorldResources _requiredResources;
+    };
+}
+
+#endif // BUILDACTIONEX_H
